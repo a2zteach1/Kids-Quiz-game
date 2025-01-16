@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kids Quiz Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #ffc0cb;
+        }
+
+        #quiz-container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 300px;
+        }
+
+        #question {
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        .option {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .option:hover {
+            background-color: #0056b3;
+        }
+
+        .selected {
+            background-color: #0056b3;
+        }
+
+        .option input {
+            margin-right: 10px;
+        }
+
+        #next-button {
+            margin-top: 20px;
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            display: none;
+        }
+
+        #start-button {
+            margin-top: 20px;
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+        }
+
+        #start-button:hover {
+            background-color: #0056b3;
+        }
+
+        #result-container {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        #question-container {
+            display: none;
+        }
+
+        #restart-button {
+            margin-top: 20px;
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #f44336;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+        }
+
+        #restart-button:hover {
+            background-color: #d32f2f;
+        }
+
+        .highlight {
+            font-weight: bold;
+            color: #ff5722;
+        }
+
+        .celebration {
+            font-size: 24px;
+            color: green;
+            font-weight: bold;
+        }
+
+        .loss {
+            font-size: 24px;
+            color: red;
+            font-weight: bold;
+        }
+
+        #wrong-questions-container {
+            margin-top: 20px;
+            font-size: 16px;
+        }
+
+        #wrong-questions-button {
+            margin-top: 20px;
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #ff9800;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            display: none;
+        }
+
+        #wrong-questions-button:hover {
+            background-color: #f57c00;
+        }
+    </style>
+</head>
+<body>
+    <div id="quiz-container">
+        <h1>Kids Quiz Game</h1>
+        <button id="start-button" onclick="startGame()">Start Game</button>
+        <div id="question-container">
+            <p id="question"></p>
+            <div id="options"></div>
+        </div>
+        <button id="next-button" onclick="nextQuestion()">Next</button>
+        <div id="result-container"></div>
+        <div id="wrong-questions-container"></div>
+        <button id="wrong-questions-button" onclick="viewWrongQuestions()">View Wrong Questions</button>
+        <button id="restart-button" style="display: none;" onclick="restartGame()">Play Again</button>
+        <p class="highlight">App made by: Rupak Kushwaha</p>
+    </div>
+    <script>
+        const operations = ['+', '-', '*', '/'];
+
+        const questions = Array.from({ length: 100 }, () => {
+            const num1 = Math.floor(Math.random() * 10) + 1;
+            const num2 = Math.floor(Math.random() * 10) + 1;
+            const operation = operations[Math.floor(Math.random() * operations.length)];
+            let question;
+            let answer;
+
+            switch (operation) {
+                case '+':
+                    question = `What is ${num1} + ${num2}?`;
+                    answer = num1 + num2;
+                    break;
+                case '-':
+                    question = `What is ${num1} - ${num2}?`;
+                    answer = num1 - num2;
+                    break;
+                case '*':
+                    question = `What is ${num1} * ${num2}?`;
+                    answer = num1 * num2;
+                    break;
+                case '/':
+                    question = `What is ${num1 * num2} / ${num2}?`;
+                    answer = num1;
+                    break;
+            }
+
+            const options = [
+                answer,
+                answer + Math.floor(Math.random() * 10) + 1,
+                answer - Math.floor(Math.random() * 5) - 1,
+                Math.floor(Math.random() * 100)
+            ];
+
+            return {
+                question,
+                options: options.sort(() => Math.random() - 0.5),
+                answer: String(answer)
+            };
+        });
+
+        let currentQuestionIndex = 0;
+        let correctAnswers = 0;
+        let questionsThisRound = 10;
+        let wrongQuestions = [];
+
+        function startGame() {
+            document.getElementById('start-button').style.display = 'none';
+            document.getElementById('question-container').style.display = 'block';
+            document.getElementById('result-container').textContent = '';
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const questionElement = document.getElementById('question');
+            const optionsElement = document.getElementById('options');
+
+            const currentQuestion = questions[currentQuestionIndex];
+
+            questionElement.textContent = currentQuestion.question;
+            optionsElement.innerHTML = '';
+
+            currentQuestion.options.forEach(option => {
+                const optionElement = document.createElement('div');
+                optionElement.classList.add('option');
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.name = 'option';
+                checkbox.value = option;
+
+                optionElement.appendChild(checkbox);
+                optionElement.appendChild(document.createTextNode(option));
+
+                optionElement.onclick = () => selectOption(checkbox, option);
+
+                optionsElement.appendChild(optionElement);
+            });
+        }
+
+        function selectOption(checkbox, selectedOption) {
+            const options = document.querySelectorAll('input[name="option"]');
+            options.forEach(option => {
+                option.checked = false;
+            });
+
+            checkbox.checked = true;
+            document.getElementById('next-button').style.display = 'block';
+        }
+
+        function nextQuestion() {
+            const currentQuestion = questions[currentQuestionIndex];
+            const selectedOption = document.querySelector('input[name="option"]:checked');
+
+            if (selectedOption && selectedOption.value === currentQuestion.answer) {
+                correctAnswers++;
+            } else {
+                wrongQuestions.push(currentQuestion);
+            }
+
+            currentQuestionIndex++;
+            questionsThisRound--;
+
+            if (questionsThisRound > 0) {
+                loadQuestion();
+                document.getElementById('next-button').style.display = 'none';
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            const resultContainer = document.getElementById('result-container');
+            const restartButton = document.getElementById('restart-button');
+            const wrongQuestionsButton = document.getElementById('wrong-questions-button');
+            const message = correctAnswers >= 5 ? 
+                `<span class="celebration">Congratulations! You won! 🎉</span>` :
+                `<span class="loss">Game Over! You lost! 😞</span>`;
+            resultContainer.innerHTML = `${message} You answered ${correctAnswers} questions correctly.`;
+            document.getElementById('question-container').style.display = 'none';
+            document.getElementById('next-button').style.display = 'none';
+            wrongQuestionsButton.style.display = 'block';
+            restartButton.style.display = 'block';
+        }
+
+        function viewWrongQuestions() {
+            const wrongQuestionsContainer = document.getElementById('wrong-questions-container');
+            wrongQuestionsContainer.innerHTML = '<h3>Wrong Questions</h3>';
+            wrongQuestionsContainer.style.display = 'block'; // Show wrong questions container
+
+            wrongQuestions.forEach((questionObj, index) => {
+                const questionElement = document.createElement('p');
+                questionElement.textContent = `Q${index + 1}: ${questionObj.question} (Correct Answer: ${questionObj.answer})`;
+                wrongQuestionsContainer.appendChild(questionElement);
+            });
+        }
+
+        function restartGame() {
+            correctAnswers = 0;
+            wrongQuestions = []; // Reset wrong questions
+            questionsThisRound = 10;
+            currentQuestionIndex = Math.floor(Math.random() * (questions.length - 10));
+            
+            // Hide restart button and wrong questions section
+            document.getElementById('restart-button').style.display = 'none';
+            document.getElementById('wrong-questions-button').style.display = 'none';
+            document.getElementById('wrong-questions-container').style.display = 'none'; // Hide wrong questions container
+            
+            startGame();
+        }
+    </script>
+</body>
+</html>
